@@ -48,11 +48,9 @@ const editor = monaco.editor.create(editorDiv, {
 // Begin textmate stuff
 
 const cache = new TokensProviderCache(editor);
-
-monaco.languages.setTokensProvider(
-  "typescript",
-  await cache.getTokensProvider("source.ts")
-);
+cache.getTokensProvider("source.ts").then((tokensProvider) => {
+  monaco.languages.setTokensProvider("typescript", tokensProvider);
+});
 
 window.addEventListener("resize", () => editor.layout());
 
