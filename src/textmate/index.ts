@@ -1,23 +1,23 @@
-import * as vsctm from 'vscode-textmate';
-import { loadWASM, OnigScanner, OnigString } from 'vscode-oniguruma';
-import * as monaco from 'monaco-editor';
-import wasmURL from 'vscode-oniguruma/release/onig.wasm?url';
-import { TMToMonacoToken } from './tm-to-monaco-token';
+import * as vsctm from "vscode-textmate";
+import { loadWASM, OnigScanner, OnigString } from "vscode-oniguruma";
+import * as monaco from "monaco-editor";
+import wasmURL from "vscode-oniguruma/release/onig.wasm?url";
+import { TMToMonacoToken } from "./tm-to-monaco-token";
 
 export {
   convertTheme,
   type IVScodeTheme,
   type TokenColor,
-} from './theme-converter';
+} from "./theme-converter";
 
 const wasmPromise = fetch(wasmURL)
   .then((response) => response.arrayBuffer())
   .then((buffer) => loadWASM({ data: buffer }))
-  .catch((error) => console.error('Failed to load `onig.wasm`:', error));
+  .catch((error) => console.error("Failed to load `onig.wasm`:", error));
 
 const scopeUrlMap: Record<string, string> = {
-  'source.ts':
-    'https://raw.githubusercontent.com/microsoft/vscode/main/extensions/typescript-basics/syntaxes/TypeScript.tmLanguage.json',
+  "source.ts":
+    "https://raw.githubusercontent.com/microsoft/vscode/main/extensions/typescript-basics/syntaxes/TypeScript.tmLanguage.json",
 };
 
 const registry = new vsctm.Registry({
@@ -65,7 +65,7 @@ async function createTokensProvider(
   const grammar = await registry.loadGrammar(scopeName);
 
   if (!grammar) {
-    throw new Error('Failed to load grammar');
+    throw new Error("Failed to load grammar");
   }
 
   const result: monaco.languages.TokensProvider = {
@@ -87,12 +87,6 @@ async function createTokensProvider(
       return { tokens, endState: lineTokens.ruleStack };
     },
   };
-
-  console.log(
-    grammar
-      .tokenizeLine('function x(y) {return y}', vsctm.INITIAL)
-      .tokens.map((token) => token.scopes)
-  );
   return result;
 }
 

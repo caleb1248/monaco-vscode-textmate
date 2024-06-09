@@ -5,9 +5,6 @@ import * as monaco from "monaco-editor";
 import { TokensProviderCache, convertTheme } from "./textmate/index";
 import darkPlusTheme from "./textmate/themes/dark-plus";
 
-// import eruda from 'eruda';
-// eruda.init();
-
 const editorDiv = document.createElement("div");
 editorDiv.classList.add("editor");
 document.getElementById("app")?.appendChild(editorDiv);

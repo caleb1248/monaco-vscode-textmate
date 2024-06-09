@@ -1,7 +1,7 @@
-import type { editor } from 'monaco-editor';
+import type { editor } from "monaco-editor";
 
 interface IVScodeTheme {
-  $schema: 'vscode://schemas/color-theme';
+  $schema: "vscode://schemas/color-theme";
   name?: string | undefined;
   include?: string | undefined;
   tokenColors: TokenColor[];
@@ -23,7 +23,7 @@ interface TokenColor {
 function convertTheme(theme: IVScodeTheme): editor.IStandaloneThemeData {
   const rules = [];
   for (const rule of theme.tokenColors) {
-    if (typeof rule.scope === 'string') {
+    if (typeof rule.scope === "string") {
       rules.push({
         token: rule.scope,
         foreground: rule.settings.foreground,
@@ -38,10 +38,8 @@ function convertTheme(theme: IVScodeTheme): editor.IStandaloneThemeData {
     }
   }
 
-  console.log(rules.map((rule) => rule.token));
-
   return {
-    base: 'vs-dark',
+    base: "vs-dark",
     inherit: false,
     rules,
     colors: theme.colors || {},
