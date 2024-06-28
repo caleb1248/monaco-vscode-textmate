@@ -1,13 +1,13 @@
-import "./style.css";
-import "./workers";
+import './style.css';
+import './workers';
 
-import * as monaco from "monaco-editor";
-import { TokensProviderCache, convertTheme } from "./textmate/index";
-import darkPlusTheme from "./textmate/themes/dark-plus";
+import * as monaco from 'monaco-editor';
+import { TokensProviderCache, convertTheme } from './textmate/index';
+import darkPlusTheme from './textmate/themes/dark-plus.json';
 
-const editorDiv = document.createElement("div");
-editorDiv.classList.add("editor");
-document.getElementById("app")?.appendChild(editorDiv);
+const editorDiv = document.createElement('div');
+editorDiv.classList.add('editor');
+document.getElementById('app')?.appendChild(editorDiv);
 const model = monaco.editor.createModel(
   `// This is a demonstration of what textmate grammars can do, and what monaco grammars can't.
 
@@ -30,29 +30,29 @@ function subtract(a: number, b: number) {
 }
 
 export { add, add as default }`,
-  "typescript",
-  monaco.Uri.file("main.ts")
+  'typescript',
+  monaco.Uri.file('main.ts')
 );
 
 // Register textmate theme
 const theme = convertTheme(darkPlusTheme);
 
-monaco.editor.defineTheme("dark-plus", theme);
+monaco.editor.defineTheme('dark-plus', theme);
 
 const editor = monaco.editor.create(editorDiv, {
   model,
   tabSize: 2,
-  theme: "dark-plus",
+  theme: 'dark-plus',
 });
 
 // Begin textmate stuff
 
 const cache = new TokensProviderCache(editor);
-cache.getTokensProvider("source.ts").then((tokensProvider) => {
-  monaco.languages.setTokensProvider("typescript", tokensProvider);
+cache.getTokensProvider('source.ts').then((tokensProvider) => {
+  monaco.languages.setTokensProvider('typescript', tokensProvider);
 });
 
-window.addEventListener("resize", () => editor.layout());
+window.addEventListener('resize', () => editor.layout());
 
 // @ts-ignore
 window.editor = editor;
