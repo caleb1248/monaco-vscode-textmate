@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-//
+// This file is slightly modified from the original file - I added the TMToMonacoToken at the end.
+// See the original file at https://github.com/microsoft/vscode/blob/main/src/vs/workbench/services/textMate/common/TMHelper.ts
 
 export interface IColorTheme {
   readonly tokenColors: ITokenColorizationRule[];
