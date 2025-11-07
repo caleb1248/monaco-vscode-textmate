@@ -1,14 +1,9 @@
 import * as vsctm from 'vscode-textmate';
 import { loadWASM, OnigScanner, OnigString } from 'vscode-oniguruma';
-import * as monaco from 'monaco-editor';
+import * as monaco from 'monaco-editor-core';
 import wasmURL from 'vscode-oniguruma/release/onig.wasm?url';
-import { IColorTheme, TMToMonacoToken } from './tm-to-monaco-token';
 
-export {
-  convertTheme,
-  type IVScodeTheme,
-  type TokenColor,
-} from './theme-converter';
+export { convertTheme, type IVScodeTheme, type TokenColor } from './theme-converter';
 
 const wasmPromise = fetch(wasmURL)
   .then((response) => response.arrayBuffer())
@@ -37,73 +32,47 @@ const registry = new vsctm.Registry({
       return fetchGrammar(url).then((grammar) => JSON.parse(grammar));
     }
 
-    return Promise.reject(
-      new Error(`No grammar found for scope: ${scopeName}`)
-    );
+    return Promise.reject(new Error(`No grammar found for scope: ${scopeName}`));
   },
 });
 
 async function createTokensProvider(
-  scopeName: string,
-  editor?:
-    | (monaco.editor.IStandaloneCodeEditor & { _themeService?: any })
-    | undefined
-): Promise<monaco.languages.TokensProvider> {
-  let colorTheme: IColorTheme | undefined = undefined;
-
-  if (editor) {
-    const rules: monaco.editor.ITokenThemeRule[] =
-      editor._themeService._theme.themeData.rules;
-    colorTheme = {
-      tokenColors: rules.map((rule) => ({
-        scope: rule.token,
-        settings: {
-          foreground: rule.foreground,
-          background: rule.background,
-          fontStyle: rule.fontStyle,
-        },
-      })),
-    };
-
-    // @ts-expect-error
-    editor._themeService.onDidColorThemeChange((theme) => {
-      const rules: monaco.editor.ITokenThemeRule[] = theme.themeData.rules;
-      colorTheme = {
-        tokenColors: rules.map((rule) => ({
-          scope: rule.token,
-          settings: {
-            foreground: rule.foreground,
-            background: rule.background,
-            fontStyle: rule.fontStyle,
-          },
-        })),
-      };
-    });
-  }
-
+  scopeName: string
+): Promise<monaco.languages.EncodedTokensProvider> {
   const grammar = await registry.loadGrammar(scopeName);
 
   if (!grammar) {
     throw new Error('Failed to load grammar');
   }
 
-  const result: monaco.languages.TokensProvider = {
+  // We use `EncodedTokensProvider` here
+  // If you want non-encoded tokens, you can use `grammar.tokenizeLine`
+  // However, non-encoded textmate tokens aren't directly compatible with Monaco tokens
+  // To fix this, you must convert the tokens yourself
+  // This file here has most of the code https://github.com/microsoft/vscode/blob/main/src/vs/workbench/services/textMate/common/TMHelper.ts
+  const result: monaco.languages.EncodedTokensProvider = {
     getInitialState() {
       return vsctm.INITIAL;
     },
     tokenize(line, state: vsctm.StateStack) {
-      const lineTokens = grammar.tokenizeLine(line, state);
-      const tokens: monaco.languages.IToken[] = [];
-      for (const token of lineTokens.tokens) {
+      let result = grammar.tokenizeLine(line, state);
+      let tokens: monaco.languages.IToken[] = [];
+      for (let i = 0; i < result.tokens.length; i++) {
+        let token = result.tokens[i];
         tokens.push({
           startIndex: token.startIndex,
-          // Monaco doesn't support an array of scopes
-          scopes: colorTheme
-            ? TMToMonacoToken(colorTheme, token.scopes)
-            : token.scopes[token.scopes.length - 1],
+          scopes: token.scopes.join(' '),
         });
       }
-      return { tokens, endState: lineTokens.ruleStack };
+      return { tokens, endState: result.ruleStack };
+    },
+    tokenizeEncoded(line, state: vsctm.StateStack) {
+      const lineTokens = grammar.tokenizeLine2(line, state);
+
+      return {
+        tokens: lineTokens.tokens,
+        endState: lineTokens.ruleStack,
+      };
     },
   };
 
@@ -111,20 +80,33 @@ async function createTokensProvider(
 }
 
 class TokensProviderCache {
-  private cache: Record<string, monaco.languages.TokensProvider> = {};
+  private cache: Record<string, monaco.languages.EncodedTokensProvider> = {};
 
-  constructor(
-    private editor?: monaco.editor.IStandaloneCodeEditor | undefined
-  ) {}
+  constructor(editor: any) {
+    editor._themeService.onDidColorThemeChange((theme: any) => {
+      this.updateTheme(theme);
+    });
+    this.updateTheme(editor._themeService.getColorTheme());
+    console.log('created!');
+  }
 
-  async getTokensProvider(
-    scopeName: string
-  ): Promise<monaco.languages.TokensProvider> {
+  private updateTheme(theme: any) {
+    registry.setTheme({
+      settings: (theme.themeData as monaco.editor.IStandaloneThemeData).rules.map((rule) => ({
+        scope: rule.token,
+        settings: {
+          foreground: rule.foreground,
+          background: rule.background,
+          fontStyle: rule.fontStyle,
+        },
+      })),
+    });
+  }
+
+  async getTokensProvider(scopeName: string): Promise<monaco.languages.EncodedTokensProvider> {
     if (!this.cache[scopeName]) {
-      this.cache[scopeName] = await createTokensProvider(
-        scopeName,
-        this.editor
-      );
+      this.cache[scopeName] = await createTokensProvider(scopeName);
+      console.log('created tokens provider for', scopeName);
     }
 
     return this.cache[scopeName];

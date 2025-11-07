@@ -344,10 +344,7 @@
       }
     },
     {
-      "scope": [
-        "punctuation.section.embedded.begin.php",
-        "punctuation.section.embedded.end.php"
-      ],
+      "scope": ["punctuation.section.embedded.begin.php", "punctuation.section.embedded.end.php"],
       "settings": {
         "foreground": "#569CD6"
       }
@@ -554,7 +551,7 @@
     {
       "scope": "keyword.other.dotenv",
       "settings": {
-        "foreground": "#FF000000"
+        "foreground": "#D4D4D4"
       }
     },
     {
