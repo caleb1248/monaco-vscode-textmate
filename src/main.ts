@@ -3,7 +3,7 @@ import './workers';
 
 import 'monaco-editor/esm/vs/editor/editor.all';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-//@ts-ignore
+// @ts-ignore
 import { conf } from 'monaco-editor/esm/vs/basic-languages/typescript/typescript';
 import { TokensProviderCache, convertTheme } from './textmate/index';
 import darkPlusTheme from './textmate/themes/dark-plus.json';

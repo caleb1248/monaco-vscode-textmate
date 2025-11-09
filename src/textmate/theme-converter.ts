@@ -25,6 +25,9 @@ interface TokenColor {
 
 type ThemeType = 'light' | 'dark' | 'hcLight' | 'hcDark';
 
+/**
+ * Converts a VSCode theme to a monaco-editor compatible theme.
+ */
 function convertTheme(theme: IVScodeTheme): editor.IStandaloneThemeData {
   const rules = [];
   for (const rule of theme.tokenColors) {

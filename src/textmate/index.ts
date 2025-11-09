@@ -11,12 +11,13 @@ import * as builtInThemes from 'monaco-editor/esm/vs/editor/standalone/common/th
 const themeService = StandaloneServices.get(IStandaloneThemeService);
 export { convertTheme, type IVScodeTheme, type TokenColor } from './theme-converter';
 
+// Load the wasm file for vscode-oniguruma
 const wasmPromise = fetch(wasmURL)
   .then((response) => response.arrayBuffer())
   .then((buffer) => loadWASM({ data: buffer }))
   .catch((error) => console.error('Failed to load `onig.wasm`:', error));
 
-const scopeUrlMap: Record<string, string> = {
+const tmScopeToUrlMap: Record<string, string> = {
   'source.ts':
     'https://raw.githubusercontent.com/microsoft/vscode/main/extensions/typescript-basics/syntaxes/TypeScript.tmLanguage.json',
 };
@@ -28,23 +29,23 @@ const registry = new vsctm.Registry({
       createOnigString: (str) => new OnigString(str),
     };
   }),
-  loadGrammar(scopeName) {
-    function fetchGrammar(path: string) {
-      return fetch(path).then((response) => response.text());
-    }
 
-    const url = scopeUrlMap[scopeName];
+  async loadGrammar(scopeName) {
+    const url = tmScopeToUrlMap[scopeName];
     if (url) {
-      return fetchGrammar(url).then((grammar) => JSON.parse(grammar));
+      const response = await fetch(url);
+      const grammar = await response.text();
+      return JSON.parse(grammar);
+    } else {
+      throw new Error(`No grammar found for scope: ${scopeName}`);
     }
-
-    return Promise.reject(new Error(`No grammar found for scope: ${scopeName}`));
   },
 });
 
-const colorToScope = new Map<string, string>();
+const colorToScopeMap = new Map<string, string>();
 
 function updateTheme(theme: any) {
+  // Send the current theme to the registry
   let convertedTheme = {
     settings: (theme.themeData as monaco.editor.IStandaloneThemeData).rules.map((rule) => ({
       scope: rule.token,
@@ -55,10 +56,15 @@ function updateTheme(theme: any) {
       },
     })),
   };
+
   registry.setTheme(convertedTheme);
+
+  // Build the color to scope map
   const themeData = theme.themeData as monaco.editor.IStandaloneThemeData;
   const rules = themeData.rules;
+
   if (themeData.inherit) {
+    // Add built-in theme rules
     switch (themeData.base) {
       case 'vs-dark':
         rules.push(...builtInThemes.vs_dark.rules);
@@ -75,10 +81,13 @@ function updateTheme(theme: any) {
         break;
     }
   }
+
+  colorToScopeMap.clear();
+
   for (const rule of themeData.rules) {
     const color = rule.foreground;
-    if (color && !colorToScope.has(color)) {
-      colorToScope.set(color, rule.token);
+    if (color && !colorToScopeMap.has(color)) {
+      colorToScopeMap.set(color, rule.token);
     }
   }
 }
@@ -99,20 +108,18 @@ async function createTokensProvider(scopeName: string): Promise<monaco.languages
     throw new Error('Failed to load grammar');
   }
 
-  // We use `EncodedTokensProvider` here
-  // If you want non-encoded tokens, you can use `grammar.tokenizeLine`
-  // However, non-encoded textmate tokens aren't directly compatible with Monaco tokens
-  // To fix this, you must convert the tokens yourself
-  // This file here has most of the code https://github.com/microsoft/vscode/blob/main/src/vs/workbench/services/textMate/common/TMHelper.ts
   const result: monaco.languages.TokensProvider = {
     getInitialState() {
       return vsctm.INITIAL;
     },
     tokenize(line, state: vsctm.StateStack) {
+      // First we tokenize the line using `tokenizeLine2`
+      // Then we extract the foreground from each token and find the corresponding scope for the foreground
       let result = grammar.tokenizeLine2(line, state);
+
       const tokensLength = result.tokens.length / 2;
       const tokens: monaco.languages.IToken[] = new Array(tokensLength);
-      console.log(Object.fromEntries(colorToScope));
+
       for (let j = 0; j < tokensLength; j++) {
         const startIndex = result.tokens[2 * j];
         const metadata = result.tokens[2 * j + 1];
@@ -122,7 +129,7 @@ async function createTokensProvider(scopeName: string): Promise<monaco.languages
           ] ?? ''
         ).toString();
 
-        const scope = colorToScope.get(color.toUpperCase()) ?? '';
+        const scope = colorToScopeMap.get(color.toUpperCase()) ?? '';
         tokens[j] = { startIndex, scopes: scope };
       }
 
@@ -136,6 +143,9 @@ async function createTokensProvider(scopeName: string): Promise<monaco.languages
 class TokensProviderCache {
   private cache: Record<string, monaco.languages.TokensProvider> = {};
 
+  /**
+   * Get the corresponding TokensProvider for a given scope, or create one if it doesn't exist.
+   */
   async getTokensProvider(scopeName: string): Promise<monaco.languages.TokensProvider> {
     if (!this.cache[scopeName]) {
       this.cache[scopeName] = await createTokensProvider(scopeName);
