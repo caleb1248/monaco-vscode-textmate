@@ -1,4 +1,4 @@
-import type { editor } from 'monaco-editor-core';
+import type { editor } from 'monaco-editor';
 
 interface IVScodeTheme {
   $schema: string;

@@ -1,27 +1,28 @@
 import './style.css';
 import './workers';
 
-import * as monaco from 'monaco-editor-core';
+import 'monaco-editor/esm/vs/editor/editor.all';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+//@ts-ignore
+import { conf } from 'monaco-editor/esm/vs/basic-languages/typescript/typescript';
 import { TokensProviderCache, convertTheme } from './textmate/index';
 import darkPlusTheme from './textmate/themes/dark-plus.json';
 import './typescript/config';
-import converted from './typescript/config';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IStandaloneThemeService } from 'monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
-const themeService = StandaloneServices.get(IStandaloneThemeService);
-console.log('theme service', themeService);
+
 const editorDiv = document.createElement('div');
 editorDiv.classList.add('editor');
 document.getElementById('app')?.appendChild(editorDiv);
-const cache = new TokensProviderCache({ _themeService: themeService });
-monaco.languages.onLanguageEncountered('typescript', () => {
-  console.log('setting language configuration for typescript');
-  monaco.languages.setLanguageConfiguration('typescript', converted);
-});
+
+const cache = new TokensProviderCache();
 monaco.languages.registerTokensProviderFactory('typescript', {
   create: () => {
-    return cache.getTokensProvider('source.ts');
+    return new Promise((r) => setTimeout(() => r(cache.getTokensProvider('source.ts')), 1000));
   },
+});
+
+monaco.languages.onLanguageEncountered('typescript', () => {
+  console.log('setting language configuration for typescript');
+  monaco.languages.setLanguageConfiguration('typescript', conf);
 });
 
 const model = monaco.editor.createModel(
@@ -36,7 +37,7 @@ interface IMyInterface {
 }
 
 async function add(a: number, b: number) {
-  console.log('calculating \${a} + \${b}');
+  console.log(\`calculating \${a} + \${b}\`);
   return a + b;
 }
 
@@ -62,8 +63,8 @@ const editor = monaco.editor.create(editorDiv, {
 });
 
 // For debugging
-globalThis.monaco = monaco;
-globalThis.editor = editor;
+// globalThis.monaco = monaco;
+// globalThis.editor = editor;
 
 window.addEventListener('resize', () => editor.layout());
 

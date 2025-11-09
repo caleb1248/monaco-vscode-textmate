@@ -1,5 +1,5 @@
-import * as monaco from 'monaco-editor-core';
-import { languages } from 'monaco-editor-core';
+import * as monaco from 'monaco-editor';
+import { languages } from 'monaco-editor';
 
 interface IRegExp {
   pattern: string;
@@ -337,76 +337,76 @@ function convertLanguageConfiguration(
   };
 }
 
-const converted: monaco.languages.LanguageConfiguration = convertLanguageConfiguration(langConfig);
-export default converted;
-// const converted = {
-//   wordPattern:
-//     /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/,
+// const converted: monaco.languages.LanguageConfiguration = convertLanguageConfiguration(langConfig);
 
-//   comments: {
-//     lineComment: '//',
-//     blockComment: ['/*', '*/'],
-//   },
+const languageConfiguration = {
+  wordPattern:
+    /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/,
 
-//   brackets: [
-//     ['{', '}'],
-//     ['[', ']'],
-//     ['(', ')'],
-//   ],
+  comments: {
+    lineComment: '//',
+    blockComment: ['/*', '*/'],
+  },
 
-//   onEnterRules: [
-//     {
-//       // e.g. /** | */
-//       beforeText: /^\s*\/\*\*(?!\/)([^\*]|\*(?!\/))*$/,
-//       afterText: /^\s*\*\/$/,
-//       action: {
-//         indentAction: languages.IndentAction.IndentOutdent,
-//         appendText: ' * ',
-//       },
-//     },
-//     {
-//       // e.g. /** ...|
-//       beforeText: /^\s*\/\*\*(?!\/)([^\*]|\*(?!\/))*$/,
-//       action: {
-//         indentAction: languages.IndentAction.None,
-//         appendText: ' * ',
-//       },
-//     },
-//     {
-//       // e.g.  * ...|
-//       beforeText: /^(\t|(\ \ ))*\ \*(\ ([^\*]|\*(?!\/))*)?$/,
-//       action: {
-//         indentAction: languages.IndentAction.None,
-//         appendText: '* ',
-//       },
-//     },
-//     {
-//       // e.g.  */|
-//       beforeText: /^(\t|(\ \ ))*\ \*\/\s*$/,
-//       action: {
-//         indentAction: languages.IndentAction.None,
-//         removeText: 1,
-//       },
-//     },
-//   ],
+  brackets: [
+    ['{', '}'],
+    ['[', ']'],
+    ['(', ')'],
+  ],
 
-//   autoClosingPairs: [
-//     { open: '{', close: '}' },
-//     { open: '[', close: ']' },
-//     { open: '(', close: ')' },
-//     { open: '"', close: '"', notIn: ['string'] },
-//     { open: "'", close: "'", notIn: ['string', 'comment'] },
-//     { open: '`', close: '`', notIn: ['string', 'comment'] },
-//     { open: '/**', close: ' */', notIn: ['string'] },
-//   ],
+  onEnterRules: [
+    {
+      // e.g. /** | */
+      beforeText: /^\s*\/\*\*(?!\/)([^\*]|\*(?!\/))*$/,
+      afterText: /^\s*\*\/$/,
+      action: {
+        indentAction: languages.IndentAction.IndentOutdent,
+        appendText: ' * ',
+      },
+    },
+    {
+      // e.g. /** ...|
+      beforeText: /^\s*\/\*\*(?!\/)([^\*]|\*(?!\/))*$/,
+      action: {
+        indentAction: languages.IndentAction.None,
+        appendText: ' * ',
+      },
+    },
+    {
+      // e.g.  * ...|
+      beforeText: /^(\t|(\ \ ))*\ \*(\ ([^\*]|\*(?!\/))*)?$/,
+      action: {
+        indentAction: languages.IndentAction.None,
+        appendText: '* ',
+      },
+    },
+    {
+      // e.g.  */|
+      beforeText: /^(\t|(\ \ ))*\ \*\/\s*$/,
+      action: {
+        indentAction: languages.IndentAction.None,
+        removeText: 1,
+      },
+    },
+  ],
 
-//   folding: {
-//     markers: {
-//       start: new RegExp('^\\s*//\\s*#?region\\b'),
-//       end: new RegExp('^\\s*//\\s*#?endregion\\b'),
-//     },
-//   },
-// };
+  autoClosingPairs: [
+    { open: '{', close: '}' },
+    { open: '[', close: ']' },
+    { open: '(', close: ')' },
+    { open: '"', close: '"', notIn: ['string'] },
+    { open: "'", close: "'", notIn: ['string', 'comment'] },
+    { open: '`', close: '`', notIn: ['string', 'comment'] },
+    { open: '/**', close: ' */', notIn: ['string'] },
+  ],
+
+  folding: {
+    markers: {
+      start: new RegExp('^\\s*//\\s*#?region\\b'),
+      end: new RegExp('^\\s*//\\s*#?endregion\\b'),
+    },
+  },
+};
 monaco.languages.register({
   id: 'typescript',
   extensions: ['.ts', '.tsx', '.cts', '.mts'],
@@ -421,11 +421,4 @@ monaco.languages.register({
   mimetypes: ['text/javascript'],
 });
 
-// monaco.languages.onLanguage('typescript', () => {
-//   try {
-//     monaco.languages.setLanguageConfiguration('typescript', converted);
-//     console.log('set');
-//   } catch (e) {
-//     console.log('error', e);
-//   }
-// });
+export default languageConfiguration;
