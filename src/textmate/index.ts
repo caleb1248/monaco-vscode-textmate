@@ -8,7 +8,7 @@ import { StandaloneServices } from 'monaco-editor/esm/vs/editor/standalone/brows
 import { IStandaloneThemeService } from 'monaco-editor/esm/vs/editor/standalone/common/standaloneTheme';
 // @ts-ignore
 import * as builtInThemes from 'monaco-editor/esm/vs/editor/standalone/common/themes';
-import { EncodedTokenAttributes } from './encodedTokenAttributes';
+
 const themeService = StandaloneServices.get(IStandaloneThemeService);
 export { convertTheme, type IVScodeTheme, type TokenColor } from './theme-converter';
 
@@ -98,9 +98,6 @@ updateTheme(themeService.getColorTheme());
 themeService.onDidColorThemeChange((theme: any) => {
   updateTheme(theme);
 });
-
-const foregroundMask = 0b00000000111111111000000000000000;
-const foregroundOffset = 15;
 
 async function createTokensProvider(
   scopeName: string,
