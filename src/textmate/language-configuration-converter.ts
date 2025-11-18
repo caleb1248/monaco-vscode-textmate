@@ -1,7 +1,3 @@
-// This file converts a vscode language configuration to a monaco language configuration
-// We don't actually use this in the project because for typescript, the > sign in arrow functions turn red due to some weird bracket matching
-// You can use this in your own project if you need.
-
 import * as monaco from 'monaco-editor';
 
 interface IRegExp {
