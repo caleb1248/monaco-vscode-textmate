@@ -4,10 +4,14 @@ import './workers';
 import 'monaco-editor/esm/vs/editor/editor.all';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 // @ts-ignore
-import { conf } from 'monaco-editor/esm/vs/basic-languages/typescript/typescript';
+import conf from './typescript/language-configuration.json';
+import {
+  convertLanguageConfiguration,
+  ILanguageConfiguration,
+} from './textmate/language-configuration-converter';
 import { TokensProviderCache, convertTheme } from './textmate/index';
 import darkPlusTheme from './textmate/themes/dark-plus.json';
-import './typescript/config';
+import './textmate/language-configuration-converter';
 import { grammarConfig } from './typescript/grammar-configuration';
 
 const editorDiv = document.createElement('div');
@@ -16,26 +20,20 @@ document.getElementById('app')?.appendChild(editorDiv);
 
 const cache = new TokensProviderCache();
 monaco.languages.registerTokensProviderFactory('typescript', {
-  create: () => {
-    return new Promise((r) =>
-      setTimeout(
-        () =>
-          r(
-            cache.getTokensProvider(
-              'source.ts',
-              monaco.languages.getEncodedLanguageId('typescript'),
-              grammarConfig
-            )
-          ),
-        1000
-      )
-    );
-  },
+  create: () =>
+    cache.getTokensProvider(
+      'source.ts',
+      monaco.languages.getEncodedLanguageId('typescript'),
+      grammarConfig
+    ),
 });
 
 monaco.languages.onLanguageEncountered('typescript', () => {
   console.log('setting language configuration for typescript');
-  monaco.languages.setLanguageConfiguration('typescript', conf);
+  monaco.languages.setLanguageConfiguration(
+    'typescript',
+    convertLanguageConfiguration(conf as ILanguageConfiguration)
+  );
 });
 
 const model = monaco.editor.createModel(
