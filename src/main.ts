@@ -8,6 +8,7 @@ import { conf } from 'monaco-editor/esm/vs/basic-languages/typescript/typescript
 import { TokensProviderCache, convertTheme } from './textmate/index';
 import darkPlusTheme from './textmate/themes/dark-plus.json';
 import './typescript/config';
+import { grammarConfig } from './typescript/grammar-configuration';
 
 const editorDiv = document.createElement('div');
 editorDiv.classList.add('editor');
@@ -16,7 +17,19 @@ document.getElementById('app')?.appendChild(editorDiv);
 const cache = new TokensProviderCache();
 monaco.languages.registerTokensProviderFactory('typescript', {
   create: () => {
-    return new Promise((r) => setTimeout(() => r(cache.getTokensProvider('source.ts')), 1000));
+    return new Promise((r) =>
+      setTimeout(
+        () =>
+          r(
+            cache.getTokensProvider(
+              'source.ts',
+              monaco.languages.getEncodedLanguageId('typescript'),
+              grammarConfig
+            )
+          ),
+        1000
+      )
+    );
   },
 });
 

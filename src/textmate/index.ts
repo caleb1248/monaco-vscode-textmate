@@ -8,6 +8,7 @@ import { StandaloneServices } from 'monaco-editor/esm/vs/editor/standalone/brows
 import { IStandaloneThemeService } from 'monaco-editor/esm/vs/editor/standalone/common/standaloneTheme';
 // @ts-ignore
 import * as builtInThemes from 'monaco-editor/esm/vs/editor/standalone/common/themes';
+import { EncodedTokenAttributes } from './encodedTokenAttributes';
 const themeService = StandaloneServices.get(IStandaloneThemeService);
 export { convertTheme, type IVScodeTheme, type TokenColor } from './theme-converter';
 
@@ -101,39 +102,37 @@ themeService.onDidColorThemeChange((theme: any) => {
 const foregroundMask = 0b00000000111111111000000000000000;
 const foregroundOffset = 15;
 
-async function createTokensProvider(scopeName: string): Promise<monaco.languages.TokensProvider> {
-  const grammar = await registry.loadGrammar(scopeName);
+async function createTokensProvider(
+  scopeName: string,
+  languageId: number,
+  config: vsctm.IGrammarConfiguration
+): Promise<monaco.languages.EncodedTokensProvider> {
+  const grammar = await registry.loadGrammarWithConfiguration(scopeName, languageId, config);
 
   if (!grammar) {
     throw new Error('Failed to load grammar');
   }
 
-  const result: monaco.languages.TokensProvider = {
+  const result: monaco.languages.EncodedTokensProvider = {
     getInitialState() {
       return vsctm.INITIAL;
     },
     tokenize(line, state: vsctm.StateStack) {
-      // First we tokenize the line using `tokenizeLine2`
-      // Then we extract the foreground from each token and find the corresponding scope for the foreground
+      // We supply a non-encoded tokens provider for the monaco tokens inspector to work
+      let result = grammar.tokenizeLine(line, state);
+
+      return {
+        endState: result.ruleStack,
+        tokens: result.tokens.map((token) => ({
+          scopes: token.scopes.join(' '),
+          startIndex: token.startIndex,
+        })),
+      };
+    },
+    tokenizeEncoded(line, state: vsctm.StateStack) {
       let result = grammar.tokenizeLine2(line, state);
 
-      const tokensLength = result.tokens.length / 2;
-      const tokens: monaco.languages.IToken[] = new Array(tokensLength);
-
-      for (let j = 0; j < tokensLength; j++) {
-        const startIndex = result.tokens[2 * j];
-        const metadata = result.tokens[2 * j + 1];
-        const color = (
-          themeService.getColorTheme().tokenTheme.getColorMap()[
-            (metadata & foregroundMask) >> foregroundOffset
-          ] ?? ''
-        ).toString();
-
-        const scope = colorToScopeMap.get(color.toUpperCase()) ?? '';
-        tokens[j] = { startIndex, scopes: scope };
-      }
-
-      return { endState: result.ruleStack, tokens };
+      return { endState: result.ruleStack, tokens: result.tokens };
     },
   };
 
@@ -141,14 +140,18 @@ async function createTokensProvider(scopeName: string): Promise<monaco.languages
 }
 
 class TokensProviderCache {
-  private cache: Record<string, monaco.languages.TokensProvider> = {};
+  private cache: Record<string, monaco.languages.EncodedTokensProvider> = {};
 
   /**
    * Get the corresponding TokensProvider for a given scope, or create one if it doesn't exist.
    */
-  async getTokensProvider(scopeName: string): Promise<monaco.languages.TokensProvider> {
+  async getTokensProvider(
+    scopeName: string,
+    languageId: number,
+    config: vsctm.IGrammarConfiguration
+  ): Promise<monaco.languages.EncodedTokensProvider> {
     if (!this.cache[scopeName]) {
-      this.cache[scopeName] = await createTokensProvider(scopeName);
+      this.cache[scopeName] = await createTokensProvider(scopeName, languageId, config);
       console.log('created tokens provider for', scopeName);
     }
 
